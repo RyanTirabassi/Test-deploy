@@ -1,0 +1,33 @@
+name: CI/CD React + Vite -> Vercel
+
+on:
+  push:
+    branches:
+      - main   # dispara no push para main
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Baixar o código
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Configurar Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # 3. Instalar dependências
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Rodar build do Vite
+      - name: Build project
+        run: npm run build
+
+      # 5. Deploy para Vercel
+      - name: Deploy to Vercel
+        run: npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
