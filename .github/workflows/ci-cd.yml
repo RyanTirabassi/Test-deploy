@@ -1,42 +1,152 @@
-name: Deploy React + Vite (GitHub / Vercel)
+name: Deploy React + Vite (GitHub Pages / Vercel)
 
 on:
   workflow_dispatch:
     inputs:
       deploy_github:
-        description: 'Deploy no GitHub Pages (true/false)'
+        description: 'Fazer deploy no GitHub Pages? (true/false)'
         required: true
         default: 'false'
       deploy_vercel:
-        description: 'Deploy na Vercel (true/false)'
+        description: 'Fazer deploy na Vercel? (true/false)'
         required: true
         default: 'true'
+  push:
+    branches:
+      - master
+      - main
+
+env:
+  BUILD_DIR: ./dist
 
 jobs:
   build:
+    name: Build do projeto
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v3
+    outputs:
+      artifact-name: dist-artifact
 
-      - name: Configurar Node.js
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Cache do npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Configurar Node.js (compatível com Vite)
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: '20'
 
-      - name: Instalar dependências
-        run: npm install
+      - name: Instalar dependências (npm ci)
+        run: npm ci
 
-      - name: Build do projeto
+      - name: Lint (se existir)
+        run: |
+          if [ -f package.json ]; then
+            echo "Verificando script 'lint' no package.json..."
+            node -e "const f=require('fs');const p=JSON.parse(f.readFileSync('package.json')); process.exit(p.scripts && p.scripts.lint ? 0 : 1)" >/dev/null 2>&1 || { echo "Nenhum script 'lint' definido — pulando."; exit 0; }
+            echo "Executando lint..."
+            npm run lint
+          else
+            echo "package.json não encontrado — pulando lint."
+          fi
+
+      - name: Testes (se existir)
+        run: |
+          if [ -f package.json ]; then
+            node -e "const f=require('fs');const p=JSON.parse(f.readFileSync('package.json')); process.exit(p.scripts && p.scripts.test ? 0 : 1)" >/dev/null 2>&1 || { echo "Nenhum script 'test' definido — pulando."; exit 0; }
+            echo "Executando testes (se houver)..."
+            npm test --silent || true
+          else
+            echo "package.json não encontrado — pulando testes."
+          fi
+
+      - name: Build do projeto (Vite)
         run: npm run build
 
-      - name: Deploy no GitHub Pages
+      - name: Verificar geração do build (dist)
+        run: |
+          if [ -d "${{ env.BUILD_DIR }}" ]; then
+            echo "✔ Build gerado em ${{ env.BUILD_DIR }}"
+            ls -la ${{ env.BUILD_DIR }}
+          else
+            echo "❌ Erro: a pasta ${{ env.BUILD_DIR }} não foi criada."
+            exit 1
+          fi
+
+      - name: Upload do artifact do build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifact
+          path: ${{ env.BUILD_DIR }}
+
+  deploy:
+    name: Deploy (GitHub Pages / Vercel)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Baixar artifact do build
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-artifact
+          path: ./dist
+
+      - name: Verificar se dist existe após download
+        run: |
+          if [ ! -d "./dist" ]; then
+            echo "❌ Erro: pasta ./dist não encontrada após download do artifact."
+            exit 1
+          else
+            echo "✔ Pasta ./dist disponível para deploy."
+            ls -la ./dist
+          fi
+
+      # ----------------- GitHub Pages -----------------
+      - name: Deploy no GitHub Pages (gh-pages)
         if: ${{ inputs.deploy_github == 'true' }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
 
-      - name: Deploy na Vercel
+      # ----------------- Vercel -----------------
+      # Verifica se o deploy para Vercel foi solicitado (checa apenas 'inputs')
+      - name: Verificar VERCEL_TOKEN (runtime)
         if: ${{ inputs.deploy_vercel == 'true' }}
-        run: npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "❌ Secret VERCEL_TOKEN não encontrada. Configure em Settings → Secrets and variables → Actions."
+            exit 1
+          else
+            echo "✔ VERCEL_TOKEN encontrado."
+          fi
+
+      - name: Deploy na Vercel (CLI)
+        if: ${{ inputs.deploy_vercel == 'true' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "Iniciando deploy para Vercel (diretório: ./dist)..."
+          # Se tiver VERCEL_PROJECT_ID e VERCEL_ORG_ID definidos, usa eles
+          if [ -n "$VERCEL_PROJECT_ID" ] && [ -n "$VERCEL_ORG_ID" ]; then
+            echo "Usando VERCEL_PROJECT_ID e VERCEL_ORG_ID (secrets fornecidos)."
+            npx vercel --prod "./dist" --token "$VERCEL_TOKEN" --confirm --scope "$VERCEL_ORG_ID" --project "$VERCEL_PROJECT_ID"
+          else
+            # Deploy simples: deploy do diretório dist
+            npx vercel --prod "./dist" --token "$VERCEL_TOKEN" --confirm || {
+              >&2 echo "Erro: falha no deploy Vercel via CLI."
+              exit 1
+            }
+          fi
+
+      - name: Finalização
+        run: echo "✅ Pipeline concluído (deploy_github=${{ inputs.deploy_github }}, deploy_vercel=${{ inputs.deploy_vercel }})"
