@@ -1,33 +1,42 @@
-name: CI/CD React + Vite -> Vercel
+name: Deploy React + Vite (GitHub / Vercel)
 
 on:
-  push:
-    branches:
-      - main   # dispara no push para main
+  workflow_dispatch:
+    inputs:
+      deploy_github:
+        description: 'Deploy no GitHub Pages (true/false)'
+        required: true
+        default: 'false'
+      deploy_vercel:
+        description: 'Deploy na Vercel (true/false)'
+        required: true
+        default: 'true'
 
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Baixar o código
-      - name: Checkout code
+      - name: Checkout do código
         uses: actions/checkout@v3
 
-      # 2. Configurar Node.js
-      - name: Setup Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 3. Instalar dependências
-      - name: Install dependencies
+      - name: Instalar dependências
         run: npm install
 
-      # 4. Rodar build do Vite
-      - name: Build project
+      - name: Build do projeto
         run: npm run build
 
-      # 5. Deploy para Vercel
-      - name: Deploy to Vercel
+      - name: Deploy no GitHub Pages
+        if: ${{ inputs.deploy_github == 'true' }}
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
+      - name: Deploy na Vercel
+        if: ${{ inputs.deploy_vercel == 'true' }}
         run: npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
