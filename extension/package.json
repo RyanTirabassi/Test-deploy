@@ -1,0 +1,45 @@
+{
+  "name": "deploy-extension",
+  "displayName": "Deploy Automático",
+  "description": "Extensão para realizar deploy automático no GitHub e Vercel diretamente do VS Code.",
+  "version": "0.0.1",
+  "publisher": "ryantirabassi",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onCommand:deploy-extension.deploy",
+    "onCommand:deploy-extension.clearVercelToken"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "deploy-extension.deploy",
+        "title": "Abrir Painel de Deploy",
+        "category": "Deploy"
+      },
+      {
+        "command": "deploy-extension.clearVercelToken",
+        "title": "Limpar Token do Vercel",
+        "category": "Deploy"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -w -p ./tsconfig.json",
+    "build": "npm run compile"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^20.6.0",
+    "@types/vscode": "^1.93.0"
+  },
+  "dependencies": {}
+}
+
+
+
+

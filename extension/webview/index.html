@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deploy Automático</title>
+
+  <!-- 🔗 Recursos substituídos dinamicamente pelo backend -->
+  <link rel="stylesheet" href="{{styleUri}}">
+</head>
+<body>
+  <h1>🚀 Deploy Automático</h1>
+
+  <!-- Opções de destino -->
+  <div class="deploy-options">
+    <label><input type="checkbox" id="githubCheck" checked /> GitHub</label>
+    <label><input type="checkbox" id="vercelCheck" /> Vercel</label>
+  </div>
+
+  <!-- Gerenciamento de Token -->
+  <div class="token-container">
+    <input id="tokenInput" type="password" placeholder="Token da Vercel..." />
+    <button id="saveTokenBtn">Salvar Token</button>
+    <button id="clearTokenBtn">Limpar Token</button>
+  </div>
+
+  <!-- Botão principal -->
+  <button id="deployBtn" class="deploy-btn">Iniciar Deploy</button>
+
+  <!-- Barra de progresso -->
+  <div class="progress-container">
+    <div class="progress-bar"></div>
+    <span class="progress-text">Aguardando início...</span>
+  </div>
+
+  <!-- Log / status -->
+  <div id="logContainer" class="log-container"></div>
+
+  <!-- Script dinâmico -->
+  <script src="{{scriptUri}}"></script>
+</body>
+</html>
+
+
+
+

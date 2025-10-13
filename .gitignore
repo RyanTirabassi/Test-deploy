@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Diretórios da extensão
+extension/node_modules
+extension/out
+extension/media
+.vvercel
