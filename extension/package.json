@@ -1,45 +1,47 @@
 {
   "name": "deploy-extension",
   "displayName": "Deploy Automático",
-  "description": "Extensão para realizar deploy automático no GitHub e Vercel diretamente do VS Code.",
-  "version": "0.0.1",
+  "description": "Painel simples para automatizar push para GitHub e deploy no Vercel a partir do VS Code.",
+  "version": "1.0.0",
   "publisher": "ryantirabassi",
   "engines": {
-    "vscode": "^1.93.0"
+    "vscode": "^1.75.0"
   },
-  "categories": ["Other"],
   "activationEvents": [
-    "onCommand:deploy-extension.deploy",
-    "onCommand:deploy-extension.clearVercelToken"
+    "onCommand:deploy-extension.deploy"
   ],
   "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RyanTirabassi/Deploy_ProjetoIntegrador.git"
+  },
   "contributes": {
     "commands": [
       {
         "command": "deploy-extension.deploy",
-        "title": "Abrir Painel de Deploy",
-        "category": "Deploy"
+        "title": "🚀 Deploy Automático"
       },
       {
         "command": "deploy-extension.clearVercelToken",
-        "title": "Limpar Token do Vercel",
-        "category": "Deploy"
+        "title": "🧹 Limpar Token do Vercel"
       }
     ]
   },
-  "scripts": {
-    "compile": "tsc -p ./tsconfig.json",
-    "watch": "tsc -w -p ./tsconfig.json",
-    "build": "npm run compile"
-  },
   "devDependencies": {
-    "typescript": "^5.6.0",
-    "@types/node": "^20.6.0",
-    "@types/vscode": "^1.93.0"
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.6.0"
   },
-  "dependencies": {}
+  "keywords": [
+    "vscode",
+    "deploy",
+    "vercel",
+    "github"
+  ],
+  "license": "MIT"
 }
-
-
-
 

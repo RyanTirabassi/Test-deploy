@@ -1,61 +1,107 @@
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
-import * as path from 'path';
 
 export function createWebviewPanel(context: vscode.ExtensionContext) {
-  const panel = vscode.window.createWebviewPanel(
-    'deployPanel',
-    'Deploy Automático',
-    vscode.ViewColumn.One,
-    { enableScripts: true }
-  );
+    const panel = vscode.window.createWebviewPanel(
+        'deployPanel',
+        'Deploy Automático',
+        vscode.ViewColumn.One,
+        { enableScripts: true }
+    );
 
-  const scriptUri = vscode.Uri.joinPath(context.extensionUri, 'media', 'main.js');
-  const styleUri = vscode.Uri.joinPath(context.extensionUri, 'media', 'style.css');
+    const scriptUri = panel.webview.asWebviewUri(
+        vscode.Uri.joinPath(context.extensionUri, 'media', 'main.js')
+    );
+    const styleUri = panel.webview.asWebviewUri(
+        vscode.Uri.joinPath(context.extensionUri, 'media', 'style.css')
+    );
 
-  panel.webview.html = getWebviewContent(panel.webview, scriptUri, styleUri);
-
-  // Recebe mensagens da interface
-  panel.webview.onDidReceiveMessage(async (msg) => {
-    if (msg.command === 'deploy') {
-      const { target, repo, description } = msg;
-
-      vscode.window.showInformationMessage(`🚀 Fazendo deploy em: ${target}`);
-      vscode.window.showInformationMessage(`📁 Repositório: ${repo}`);
-      vscode.window.showInformationMessage(`📝 Descrição: ${description}`);
-
-      let command = '';
-      if (target === 'github') command = 'git push origin main';
-      else if (target === 'vercel') command = 'npx vercel --prod';
-      else command = 'git push origin main && npx vercel --prod';
-
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          panel.webview.postMessage({ type: 'error', text: error.message });
-          return;
-        }
-        panel.webview.postMessage({ type: 'success', text: stdout });
-      });
-    }
-  });
+    panel.webview.html = getWebviewContent(styleUri, scriptUri);
+    return panel;
 }
 
-function getWebviewContent(webview: vscode.Webview, scriptUri: vscode.Uri, styleUri: vscode.Uri): string {
-  const scriptSrc = webview.asWebviewUri(scriptUri);
-  const styleSrc = webview.asWebviewUri(styleUri);
+function getWebviewContent(styleUri: vscode.Uri, scriptUri: vscode.Uri): string {
+    return /* html */ `
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="${styleUri}">
+        <title>Deploy Automático</title>
+        <style>
+            body {
+                background-color: #1e1e1e;
+                color: #fff;
+                font-family: Arial, sans-serif;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 20px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                color: #fff;
+            }
+            label {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                margin-right: 15px;
+            }
+            .logo {
+                width: 20px;
+                height: 20px;
+                object-fit: contain;
+            }
+            .footer {
+                margin-top: 20px;
+                font-size: 12px;
+                color: #ccc;
+            }
+            .deploy-options {
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            button {
+                background-color: #007acc;
+                color: #fff;
+                border: none;
+                padding: 8px 14px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: #005fa3;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🚀 Deploy Automático</h1>
 
-  return /*html*/`
-  <!DOCTYPE html>
-  <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="stylesheet" href="${styleSrc}" />
-    <title>Deploy Automático</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script src="${scriptSrc}"></script>
-  </body>
-  </html>
-  `;
+        <div class="deploy-options">
+            <label title="Deploy via GitHub">
+                <input type="checkbox" id="github">
+                <img class="logo" src="https://cdn.pixabay.com/photo/2022/01/30/13/33/github-6980894_1280.png" alt="GitHub Logo">
+            </label>
+
+            <label title="Deploy via Vercel">
+                <input type="checkbox" id="vercel">
+                <img class="logo" src="https://s3.typoniels.de/typoniels-strapi/production/vercel_7b7d3ef99c.webp" alt="Vercel Logo">
+            </label>
+        </div>
+
+        <button id="deploy">Iniciar Deploy</button>
+
+        <div class="footer">
+            Selecione onde deseja realizar o deploy e clique em "Iniciar Deploy".
+        </div>
+
+        <script src="${scriptUri}"></script>
+    </body>
+    </html>`;
 }
+
+
+
+
