@@ -587,7 +587,7 @@ function getWebviewContent(webview: vscode.Webview, scriptUri: string, styleUri:
     <label class="small">Mensagem de commit (opcional)</label>
     <input id="commitMessage" type="text" placeholder="Descrição do deploy (opcional)" />
     <div style="margin-top:8px; display:flex; gap:8px;">
-      <button id="refresh">Refresh files</button>
+      <button id="refresh">Atualizar arquivos</button>
       <button id="deploy">Iniciar Deploy</button>
       <button id="testDeploy" class="secondary">Testar Deploy</button>
     </div>
